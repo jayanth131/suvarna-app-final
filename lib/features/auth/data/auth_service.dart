@@ -7,6 +7,17 @@ class AuthService {
   static const String baseUrl =
       "https://suvarna-jewellers-customer-backend.vercel.app/api/auth";
 
+  /// Helper method to safely decode JSON responses
+  static Map<String, dynamic> _safeJsonDecode(String body) {
+    try {
+      return jsonDecode(body);
+    } catch (e) {
+      print('JSON decode error: $e');
+      print('Response body: $body');
+      return {"message": "Server error - invalid response"};
+    }
+  }
+
   static Future<AuthResponse> sendSignupOtp({
     required String mobile,
   }) async {

@@ -6,7 +6,9 @@ import '../../../core/session_manager.dart';
 import 'package:suvarna_jewellers/core/notification_service.dart';
 
 class PaymentService {
-  static final Razorpay _razorpay = Razorpay();
+  // FIX 1 ▸ Not a final static — recreated fresh on every payment
+  //          to avoid stale native channel on iOS
+  static Razorpay? _razorpay;
 
   static void startPayment({
     required BuildContext context,
@@ -29,30 +31,44 @@ class PaymentService {
         return;
       }
 
+      // FIX 2 ▸ Added Authorization header (was missing in original)
       final orderResponse = await http.post(
         Uri.parse(
           "https://suvarna-jewellers-customer-backend.vercel.app/api/payments/create-order",
         ),
         headers: {
           "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
         },
         body: jsonEncode({
           "amount": amount,
           "currency": "INR",
+          "userId": userId,
+          "schemeId": schemeId,
         }),
       );
 
       if (orderResponse.statusCode != 200) {
-        throw Exception("Order creation failed");
+        throw Exception("Order creation failed: ${orderResponse.body}");
       }
 
       final orderData = jsonDecode(orderResponse.body);
 
-      _razorpay.clear();
+      // FIX 3 ▸ Clear OLD instance first, then create FRESH one
+      //          Old code called clear() on the same instance then
+      //          immediately attached listeners — iOS native channel
+      //          was torn down causing "no connection" crash
+      try {
+        _razorpay?.clear();
+      } catch (e) {
+        print("[PAYMENT] Error clearing old instance: $e");
+      }
+      _razorpay = Razorpay();
 
-      _razorpay.on(
+      // Attach listeners on fresh instance — no clear() after this
+      _razorpay!.on(
         Razorpay.EVENT_PAYMENT_SUCCESS,
-            (PaymentSuccessResponse response) async {
+        (PaymentSuccessResponse response) {
           if (response.orderId == null ||
               response.paymentId == null ||
               response.signature == null) {
@@ -72,40 +88,49 @@ class PaymentService {
           print("SCHEME ID SENT: $schemeId");
           print("USER ID SENT: $userId");
 
-          await _verifyPayment(
-            context: context,
-            token: token,
-            userId: userId,
-            schemeId: schemeId,
-            razorpayOrderId: response.orderId!,
-            razorpayPaymentId: response.paymentId!,
-            razorpaySignature: response.signature!,
-            onSuccess: onSuccess,
-          );
+          // FIX 4 ▸ Use Future.microtask instead of async/await inside
+          //          listener — await inside iOS callback blocks the
+          //          native thread and causes a crash/drop
+          Future.microtask(() => _verifyPayment(
+                context: context,
+                token: token,
+                userId: userId,
+                schemeId: schemeId,
+                razorpayOrderId: response.orderId!,
+                razorpayPaymentId: response.paymentId!,
+                razorpaySignature: response.signature!,
+                onSuccess: onSuccess,
+              ));
         },
       );
 
-      _razorpay.on(
+      _razorpay!.on(
         Razorpay.EVENT_PAYMENT_ERROR,
-            (PaymentFailureResponse response) {
+        (PaymentFailureResponse response) {
+          print("[PAYMENT ERROR] code=${response.code} msg=${response.message}");
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Payment failed"),
+              SnackBar(
+                content: Text(
+                  "Payment failed (${response.code}): ${response.message ?? 'Unknown error'}",
+                ),
               ),
             );
           }
         },
       );
 
-      _razorpay.on(
+      _razorpay!.on(
         Razorpay.EVENT_EXTERNAL_WALLET,
-            (ExternalWalletResponse response) {},
+        (ExternalWalletResponse response) {
+          print("[PAYMENT] External wallet: ${response.walletName}");
+        },
       );
 
       final options = {
         'key': 'rzp_test_SQBmMDbmpm3m0D',
         'amount': orderData["amount"],
+          'currency': 'INR',
         'name': 'Suvarna Jewellers',
         'description': 'Scheme Payment',
         'order_id': orderData["orderId"],
@@ -115,8 +140,9 @@ class PaymentService {
         },
       };
 
-      _razorpay.open(options);
+      _razorpay!.open(options);
     } catch (e) {
+      print("[PAYMENT EXCEPTION] $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -137,56 +163,74 @@ class PaymentService {
     required String razorpaySignature,
     VoidCallback? onSuccess,
   }) async {
-    final response = await http.post(
-      Uri.parse(
-        "https://suvarna-jewellers-customer-backend.vercel.app/api/payments/verify",
-      ),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({
-        "razorpay_order_id": razorpayOrderId,
-        "razorpay_payment_id": razorpayPaymentId,
-        "razorpay_signature": razorpaySignature,
-        "schemeId": schemeId,
-        "userId": userId,
-      }),
-    );
-
-    if (!context.mounted) return;
-
-    final body = jsonDecode(response.body);
-
-    if (response.statusCode == 200 && body["status"] == "Success") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Payment successful"),
+    try {
+      final response = await http.post(
+        Uri.parse(
+          "https://suvarna-jewellers-customer-backend.vercel.app/api/payments/verify",
         ),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "razorpay_order_id": razorpayOrderId,
+          "razorpay_payment_id": razorpayPaymentId,
+          "razorpay_signature": razorpaySignature,
+          "schemeId": schemeId,
+          "userId": userId,
+        }),
       );
 
-      await NotificationService.showLocalNotification(
-        title: "Payment Successful ✅",
-        body: "Your scheme payment has been received. Thank you!",
-        id: 1,
-      );
+      if (!context.mounted) return;
 
-      if (onSuccess != null) {
-        onSuccess();
+      final body = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && body["status"] == "Success") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Payment successful ✅"),
+          ),
+        );
+
+        await NotificationService.showLocalNotification(
+          title: "Payment Successful ✅",
+          body: "Your scheme payment has been received. Thank you!",
+          id: 1,
+        );
+
+        if (onSuccess != null) {
+          onSuccess();
+        }
+      } else {
+        print("VERIFY STATUS: ${response.statusCode}");
+        print("VERIFY BODY: ${response.body}");
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Verify failed: ${response.body}"),
+            ),
+          );
+        }
       }
-    } else {
-      print("VERIFY STATUS: ${response.statusCode}");
-      print("VERIFY BODY: ${response.body}");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Verify failed: ${response.body}"),
-        ),
-      );
+    } catch (e) {
+      print("[VERIFY EXCEPTION] $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Verification error: $e"),
+          ),
+        );
+      }
     }
   }
 
   static void dispose() {
-    _razorpay.clear();
+    try {
+      _razorpay?.clear();
+      _razorpay = null;
+    } catch (e) {
+      print("[PAYMENT] Error disposing: $e");
+    }
   }
 }

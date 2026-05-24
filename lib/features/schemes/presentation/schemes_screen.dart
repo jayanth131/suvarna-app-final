@@ -12,7 +12,7 @@ class SchemesScreen extends StatefulWidget {
   const SchemesScreen({super.key});
 
   @override
-  SchemesScreenState createState() => SchemesScreenState();
+  SchemesScreenState createState() => SchemesScreenState(); 
 }
 
 class SchemesScreenState extends State<SchemesScreen> {
@@ -27,14 +27,30 @@ class SchemesScreenState extends State<SchemesScreen> {
     _enrolledFuture = EnrolledSchemeService.getUserSchemes();
   }
 
+  @override
+  void dispose() {
+    // PaymentService.dispose();
+    super.dispose();
+  }
+
   void refreshData() {
-    if (!mounted) return;
-    EnrolledSchemeService.invalidateCache();
-    setState(() {
-      _schemesFuture = SchemeService.getSchemes();
-      _enrolledFuture =
-          EnrolledSchemeService.getUserSchemes(forceRefresh: true);
-    });
+    print("[SCHEMES] refreshData called");
+    if (!mounted) {
+      print("[SCHEMES] Widget not mounted, skipping refresh");
+      return;
+    }
+    try {
+      print("[SCHEMES] Invalidating cache and refreshing data");
+      EnrolledSchemeService.invalidateCache();
+      setState(() {
+        _schemesFuture = SchemeService.getSchemes();
+        _enrolledFuture =
+            EnrolledSchemeService.getUserSchemes(forceRefresh: true);
+      });
+      print("[SCHEMES] Data refresh completed");
+    } catch (e) {
+      print("[SCHEMES] Error during refresh: $e");
+    }
   }
 
   Future<void> _refreshData() async => refreshData();

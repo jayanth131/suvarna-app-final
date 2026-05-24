@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:suvarna_jewellers/features/schemes/data/scheme_model.dart';
+import 'package:suvarna_jewellers/features/schemes/presentation/widgets/terms_and_conditions_dialog.dart';
 
 class SchemeCard extends StatelessWidget {
   final SchemeModel scheme;
@@ -126,7 +127,18 @@ class SchemeCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: isEnrolled ? null : onEnroll,
+                      onPressed: isEnrolled
+                          ? null
+                          : () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) =>
+                                    TermsAndConditionsDialog(
+                                  onAccept: onEnroll,
+                                ),
+                              );
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isEnrolled
                             ? Colors.grey.shade400

@@ -31,6 +31,11 @@ class _MPinScreenState extends State<MPinScreen> {
   bool _isConfirmStep = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
   String get _currentValue => _isConfirmStep ? _confirmMpin : _mpin;
 
   Future<void> _vibrateDigit() async {
@@ -145,12 +150,12 @@ class _MPinScreenState extends State<MPinScreen> {
 
       await SessionManager.saveLoginSession(widget.username);
 
-      // Navigate immediately after setup success
+      // Navigate to home screen
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
-            (route) => false,
+        (route) => false,
       );
       return; // early return — don't fall into verify block
     }
