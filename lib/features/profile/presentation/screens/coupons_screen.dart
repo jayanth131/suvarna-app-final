@@ -59,98 +59,109 @@ class _CouponsScreenState extends State<CouponsScreen> {
             ),
           ),
           SafeArea(
-            child: Column(
-              children: [
-                // ── Header ──────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
-                          size: 18,
-                          color: Color(0xFF7A7267),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        "My Coupons",
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF3B2A1F),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // ── Segmented toggle ─────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE0CC),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+            // Wrapped the column in DefaultTabController
+            child: DefaultTabController(
+              length: 2,
+              initialIndex: _selectedTab,
+              child: Column(
+                children: [
+                  // ── Header ──────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Row(
                       children: [
-                        _segmentButton("Active", 0),
-                        _segmentButton("Redeemed", 1),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Semantics(
+                            button: true,
+                            label: "Back",
+                            excludeSemantics: true,
+                            child: const Icon(
+                              Icons.arrow_back_ios_new,
+                              size: 18,
+                              color: Color(0xFF7A7267),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Cleaned up hardcoded heading text and used native headingLevel
+                        Semantics(
+                          header: true,
+                          headingLevel: 1,
+                          child: Text(
+                            "My Coupons",
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF3B2A1F),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
-                // ── Content ──────────────────────────────────────
-                Expanded(
-                  child: _isLoading
-                      ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFD4AF37),
+                  // ── Native Segmented Toggle (TabBar) ─────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.all(4), // Mirrors your old margin
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE0CC),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: TabBar(
+                        onTap: (index) {
+                          setState(() {
+                            _selectedTab = index;
+                          });
+                        },
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        indicator: BoxDecoration(
+                          color: const Color(0xFFD4AF37),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        labelColor: Colors.white,
+                        unselectedLabelColor: const Color(0xFF6E665A),
+                        labelStyle: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        unselectedLabelStyle: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        tabs: const [
+                          Tab(text: "Active"),
+                          Tab(text: "Redeemed"),
+                        ],
+                      ),
                     ),
-                  )
-                      : _selectedTab == 0
-                      ? _buildCouponList(_activeCoupons, isActive: true)
-                      : _buildCouponList(_usedCoupons, isActive: false),
-                ),
-              ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // ── Content ──────────────────────────────────────
+                  Expanded(
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFD4AF37),
+                            ),
+                          )
+                        : _selectedTab == 0
+                            ? _buildCouponList(_activeCoupons, isActive: true)
+                            : _buildCouponList(_usedCoupons, isActive: false),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _segmentButton(String label, int index) {
-    final selected = _selectedTab == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFD4AF37) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? Colors.white : const Color(0xFF6E665A),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -239,7 +250,9 @@ class _CouponsScreenState extends State<CouponsScreen> {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: isActive
                             ? const Color(0xFFD4AF37).withOpacity(0.15)
@@ -266,7 +279,9 @@ class _CouponsScreenState extends State<CouponsScreen> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                      vertical: 12, horizontal: 14),
+                    vertical: 12,
+                    horizontal: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEDE0CC),
                     borderRadius: BorderRadius.circular(12),
@@ -302,8 +317,11 @@ class _CouponsScreenState extends State<CouponsScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(Icons.check_circle_outline,
-                          size: 14, color: Colors.green),
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: 14,
+                        color: Colors.green,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         "Redeemed on ${_formatDate(coupon.usedAt!)}",
@@ -351,11 +369,14 @@ class _CouponsScreenState extends State<CouponsScreen> {
                   GestureDetector(
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: coupon.code));
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                            "Coupon code copied!",
-                            style: GoogleFonts.poppins(fontSize: 13),
+                          content: ExcludeSemantics(
+                            child: Text(
+                              "Coupon code copied!",
+                              style: GoogleFonts.poppins(fontSize: 13),
+                            ),
                           ),
                           backgroundColor: const Color(0xFFD4AF37),
                           behavior: SnackBarBehavior.floating,
@@ -363,26 +384,38 @@ class _CouponsScreenState extends State<CouponsScreen> {
                         ),
                       );
                     },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.copy, size: 14, color: Colors.white),
-                          const SizedBox(width: 6),
-                          Text(
-                            "Copy",
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                    child: Semantics(
+                      button: true,
+                      label: "Copy",
+                      hint: "double tap to copy the coupon code",
+                      excludeSemantics: true,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.copy,
+                              size: 14,
                               color: Colors.white,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Text(
+                              "Copy",
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -413,7 +446,9 @@ class _CouponsScreenState extends State<CouponsScreen> {
         Text(
           "gold accumulated",
           style: GoogleFonts.poppins(
-              fontSize: 12, color: const Color(0xFF8E8578)),
+            fontSize: 12,
+            color: const Color(0xFF8E8578),
+          ),
         ),
       ],
     );
@@ -448,7 +483,9 @@ class _CouponsScreenState extends State<CouponsScreen> {
         Text(
           "redeemable value",
           style: GoogleFonts.poppins(
-              fontSize: 12, color: const Color(0xFF8E8578)),
+            fontSize: 12,
+            color: const Color(0xFF8E8578),
+          ),
         ),
       ],
     );
@@ -484,7 +521,7 @@ class _CouponsScreenState extends State<CouponsScreen> {
       child: Row(
         children: List.generate(
           30,
-              (index) => Expanded(
+          (index) => Expanded(
             child: Container(
               height: 1,
               color: index.isEven

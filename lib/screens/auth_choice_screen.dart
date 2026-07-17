@@ -31,13 +31,15 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    _fadeAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
-          CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-        );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
     _checkPreviousSession();
@@ -49,10 +51,10 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
     try {
       await http
           .get(
-        Uri.parse(
-          "https://suvarna-jewellers-customer-backend.vercel.app/api/health",
-        ),
-      )
+            Uri.parse(
+              "https://suvarna-jewellers-customer-backend.vercel.app/api/health",
+            ),
+          )
           .timeout(const Duration(seconds: 5));
     } catch (_) {}
   }
@@ -82,10 +84,8 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MPinScreen(
-          mode: MPinMode.verify,
-          username: _lastPhone!,
-        ),
+        builder: (_) =>
+            MPinScreen(mode: MPinMode.verify, username: _lastPhone!),
       ),
     );
   }
@@ -113,9 +113,7 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
             ),
           ),
           Positioned.fill(
-            child: Container(
-              color: const Color(0xFFF5EBDD).withOpacity(0.85),
-            ),
+            child: Container(color: const Color(0xFFF5EBDD).withOpacity(0.85)),
           ),
           Center(
             child: FadeTransition(
@@ -150,12 +148,16 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
 
                       const SizedBox(height: 20),
 
-                      Text(
-                        "Suvarna Jewellers",
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF3E2C1C),
+                      Semantics(
+                        header: true,
+                        headingLevel: 1,
+                        child: Text(
+                          "Suvarna Jewellers",
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF3E2C1C),
+                          ),
                         ),
                       ),
 
@@ -175,8 +177,7 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                         width: 280,
                         child: Column(
                           children: [
-                            if (_hasPreviousSession &&
-                                _lastPhone != null) ...[
+                            if (_hasPreviousSession && _lastPhone != null) ...[
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
@@ -184,17 +185,18 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                                   vertical: 14,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFD4AF37)
-                                      .withOpacity(0.1),
+                                  color: const Color(
+                                    0xFFD4AF37,
+                                  ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color: const Color(0xFFD4AF37)
-                                        .withOpacity(0.3),
+                                    color: const Color(
+                                      0xFFD4AF37,
+                                    ).withOpacity(0.3),
                                   ),
                                 ),
                                 child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       "Welcome back",
@@ -241,15 +243,13 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                    const Color(0xFFD4AF37),
+                                    backgroundColor: const Color(0xFFD4AF37),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 16,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     elevation: 6,
                                   ),
@@ -276,8 +276,9 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                                     ),
                                   ),
                                   style: OutlinedButton.styleFrom(
-                                    backgroundColor:
-                                    Colors.white.withOpacity(0.9),
+                                    backgroundColor: Colors.white.withOpacity(
+                                      0.9,
+                                    ),
                                     side: const BorderSide(
                                       color: Color(0xFFD4AF37),
                                     ),
@@ -285,8 +286,7 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                                       vertical: 16,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
                                 ),
@@ -294,16 +294,19 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
 
                               const SizedBox(height: 16),
 
-                              GestureDetector(
-                                onTap: _onSignUp,
-                                child: Text(
-                                  "New user? Sign Up",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 13,
-                                    color: const Color(0xFFB48A2C),
-                                    decoration: TextDecoration.underline,
-                                    decorationColor:
-                                    const Color(0xFFB48A2C),
+                              Semantics(
+                                button:
+                                    true, // This tells the screen reader it is a clickable button
+                                child: GestureDetector(
+                                  onTap: _onSignUp,
+                                  child: Text(
+                                    "New user? Sign Up",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      color: const Color(0xFFB48A2C),
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: const Color(0xFFB48A2C),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -313,15 +316,13 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                                 child: ElevatedButton(
                                   onPressed: _loginWithPhone,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                    const Color(0xFFD4AF37),
+                                    backgroundColor: const Color(0xFFD4AF37),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 16,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     elevation: 6,
                                   ),
@@ -342,8 +343,9 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                                 child: OutlinedButton(
                                   onPressed: _onSignUp,
                                   style: OutlinedButton.styleFrom(
-                                    backgroundColor:
-                                    Colors.white.withOpacity(0.9),
+                                    backgroundColor: Colors.white.withOpacity(
+                                      0.9,
+                                    ),
                                     side: const BorderSide(
                                       color: Color(0xFFD4AF37),
                                     ),
@@ -351,8 +353,7 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
                                       vertical: 16,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
                                   child: const Text(

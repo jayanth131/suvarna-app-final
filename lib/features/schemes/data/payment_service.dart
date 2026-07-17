@@ -128,7 +128,7 @@ class PaymentService {
       );
 
       final options = {
-        'key': 'rzp_test_SQBmMDbmpm3m0D',
+        'key': 'rzp_live_TDQaSOX3zMK06D',
         'amount': orderData["amount"],
           'currency': 'INR',
         'name': 'Suvarna Jewellers',

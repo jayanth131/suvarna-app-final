@@ -45,6 +45,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      barrierLabel: "Close",
       backgroundColor: const Color(0xFFF6F0E4),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
@@ -72,117 +75,127 @@ class _ProductsScreenState extends State<ProductsScreen> {
           ),
         ),
         SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Header ──────────────────────────────────────────
-              Padding(
-                padding:
-                const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Our Collection",
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF3B2A1F),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Crafted with love, priced for you",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: const Color(0xFF8E8578),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // ── Metal toggle ─────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEDE0CC),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Row(
+          // Wrapped the main column in DefaultTabController
+          child: DefaultTabController(
+            length: 2,
+            initialIndex: _metalTab == "gold" ? 0 : 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Header ──────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _metalButton("gold", "✦ Gold"),
-                      _metalButton("silver", "✦ Silver"),
+                      Semantics(
+                        header: true,
+                        headingLevel: 1,
+                        child: Text(
+                          "Our Collection",
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF3B2A1F),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Semantics(
+                        header: true,
+                        headingLevel: 2,
+                        child: Text(
+                          "Crafted with love, priced for you",
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: const Color(0xFF8E8578),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // ── Grid ─────────────────────────────────────────────
-              Expanded(
-                child: _isLoading
-                    ? _buildSkeletonGrid()
-                    : _filteredProducts.isEmpty
-                    ? _buildEmptyState()
-                    : GridView.builder(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16),
-                  gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 0.78,
+                // ── Native Metal TabBar ─────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE0CC),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: TabBar(
+                      onTap: (index) {
+                        setState(() {
+                          _metalTab = index == 0 ? "gold" : "silver";
+                        });
+                      },
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent, // Hides native underline
+                      indicator: BoxDecoration(
+                        color: const Color(0xFFD4AF37), // Matches your active color
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: const Color(0xFF6E665A),
+                      labelStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      unselectedLabelStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      tabs: const [
+                        Tab(
+                          height: 38,
+                          text: "✦ Gold",
+                        ),
+                        Tab(
+                          height: 38,
+                          text: "✦ Silver",
+                        ),
+                      ],
+                    ),
                   ),
-                  itemCount: _filteredProducts.length,
-                  itemBuilder: (_, index) {
-                    final product = _filteredProducts[index];
-                    return ProductCard(
-                      product: product,
-                      onTap: () => _openProduct(product),
-                    );
-                  },
                 ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _metalButton(String metal, String label) {
-    final selected = _metalTab == metal;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _metalTab = metal),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color:
-            selected ? const Color(0xFFD4AF37) : Colors.transparent,
-            borderRadius: BorderRadius.circular(26),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color:
-              selected ? Colors.white : const Color(0xFF6E665A),
+                const SizedBox(height: 16),
+
+                // ── Grid ─────────────────────────────────────────────
+                Expanded(
+                  child: _isLoading
+                      ? _buildSkeletonGrid()
+                      : _filteredProducts.isEmpty
+                          ? _buildEmptyState()
+                          : GridView.builder(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 14,
+                                childAspectRatio: 0.78,
+                              ),
+                              itemCount: _filteredProducts.length,
+                              itemBuilder: (_, index) {
+                                final product = _filteredProducts[index];
+                                return ProductCard(
+                                  product: product,
+                                  onTap: () => _openProduct(product),
+                                );
+                              },
+                            ),
+                ),
+              ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -285,12 +298,32 @@ class _ProductsScreenState extends State<ProductsScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          const SizedBox(height: 18),
-          Text(
-            product.name,
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+          const SizedBox(height: 12),
+
+          Align(
+            alignment: Alignment.topRight,
+            child: Semantics(
+              button: true,
+              label: "Close",
+              excludeSemantics: true,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Color(0xFF6E665A)),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+
+          Semantics(
+            header: true,
+            label: "${product.name}",
+            headingLevel: 2,
+            excludeSemantics: true,
+            child: Text(
+              product.name,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(height: 18),

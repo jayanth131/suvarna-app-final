@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<EnrolledScheme>>? _schemesFuture;
 
   final GlobalKey<SchemesScreenState> _schemesKey =
-  GlobalKey<SchemesScreenState>();
+      GlobalKey<SchemesScreenState>();
 
   @override
   void initState() {
@@ -45,8 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void refreshSchemes() {
     if (!mounted) return;
     setState(() {
-      _schemesFuture =
-          EnrolledSchemeService.getUserSchemes(forceRefresh: true);
+      _schemesFuture = EnrolledSchemeService.getUserSchemes(forceRefresh: true);
     });
     _schemesKey.currentState?.refreshData();
   }
@@ -56,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const AuthChoiceScreen()),
-          (route) => false,
+      (route) => false,
     );
   }
 
@@ -65,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFFF6F0E4),
+      barrierLabel: "Close", // Fixes TalkBack "scrim" issue
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
@@ -214,30 +214,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        "assets/images/suvarna_logo.png",
-                        height: 44,
-                      ),
+                      Image.asset("assets/images/suvarna_logo.png", height: 44),
                       const SizedBox(width: 14),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Suvarna Jewellers",
-                            style: GoogleFonts.playfairDisplay(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF2E2118),
+                          Semantics(
+                            header: true,
+                            headingLevel: 1,
+                            child: Text(
+                              "Suvarna Jewellers",
+                              style: GoogleFonts.playfairDisplay(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF2E2118),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            "Your scheme dashboard",
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: const Color(0xFF9E8E7E),
-                            ),
-                          ),
                         ],
                       ),
                     ],
@@ -253,24 +247,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Hello, $username",
-                            style: GoogleFonts.playfairDisplay(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF2E2118),
+                          Semantics(
+                            headingLevel: 2,
+                            child: Text(
+                              "Hello, $username",
+                              style: GoogleFonts.playfairDisplay(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF2E2118),
+                              ),
                             ),
                           ),
-
                           const SizedBox(height: 4),
-
-                          //Text(
-                           // "Welcome back to your savings journey",
-                            //style: GoogleFonts.poppins(
-                              //fontSize: 13,
-                              //color: const Color(0xFF8B7B6A),
-                            //),
-                          //),
                         ],
                       );
                     },
@@ -278,15 +266,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 24),
 
-// Section label
+                  // Section label
                   Row(
                     children: [
-                      Text(
-                        "Your Schemes",
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF2E2118),
+                      Semantics(
+                        headingLevel: 3,
+                        header: true,
+                        child: Text(
+                          "Your Schemes",
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF2E2118),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -300,26 +292,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 14),
 
-                  // ── Gold / Cash filter tabs ─────────────────────
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE0CC),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        _buildFilterTab(
-                          label: "✦  Gold Schemes",
-                          selected: _showGold,
-                          onTap: () => setState(() => _showGold = true),
+                  // ── Gold / Cash Native Filter Tabs ─────────────────────
+                  DefaultTabController(
+                    length: 2,
+                    initialIndex: _showGold ? 0 : 1, // Keeps tab active state in sync
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE0CC),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: TabBar(
+                        onTap: (index) {
+                          setState(() {
+                            _showGold = index == 0;
+                          });
+                        },
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent, // Hides native underline
+                        indicator: BoxDecoration(
+                          color: const Color(0xFFD4AF37), 
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        _buildFilterTab(
-                          label: "₹  Cash Schemes",
-                          selected: !_showGold,
-                          onTap: () => setState(() => _showGold = false),
+                        labelColor: Colors.white, // Active text color
+                        unselectedLabelColor: const Color(0xFF6E665A), // Inactive text color
+                        labelStyle: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
+                        unselectedLabelStyle: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        tabs: const [
+                          Tab(
+                            height: 38,
+                            text: "✦  Gold Schemes",
+                          ),
+                          Tab(
+                            height: 38,
+                            text: "₹  Cash Schemes",
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -338,52 +353,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 child: schemes.isEmpty
                     ? ListView(
-                  // ListView needed for RefreshIndicator to work on empty
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [_buildEmptyState()],
-                )
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [_buildEmptyState()],
+                      )
                     : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
-                  itemCount: schemes.length,
-                  itemBuilder: (context, index) {
-                    return _buildSchemeCard(schemes[index]);
-                  },
-                ),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                        itemCount: schemes.length,
+                        itemBuilder: (context, index) {
+                          return _buildSchemeCard(schemes[index]);
+                        },
+                      ),
               ),
             ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildFilterTab({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFD4AF37) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : const Color(0xFF6E665A),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -423,8 +408,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSchemeCard(EnrolledScheme scheme) {
-    double progress =
-    scheme.totalMonths > 0 ? scheme.monthsPaid / scheme.totalMonths : 0;
+    double progress = scheme.totalMonths > 0
+        ? scheme.monthsPaid / scheme.totalMonths
+        : 0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -439,8 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF6F0E4).withOpacity(0.97),
                 borderRadius: BorderRadius.circular(20),
-                border:
-                Border.all(color: const Color(0xFFD4AF37), width: 0.6),
+                border: Border.all(color: const Color(0xFFD4AF37), width: 0.6),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -466,10 +451,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color:
-                          const Color(0xFFD4AF37).withOpacity(0.12),
+                          color: const Color(0xFFD4AF37).withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -511,7 +497,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       minHeight: 6,
                       backgroundColor: const Color(0xFFE7DBC9),
                       valueColor: const AlwaysStoppedAnimation(
-                          Color(0xFFB48A2C)),
+                        Color(0xFFB48A2C),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -601,7 +588,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD4AF37).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -618,7 +608,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
 
-          // NEW: This month's addition
           if (scheme.isWeightBased && scheme.lastPaymentGrams > 0) ...[
             const SizedBox(height: 10),
             Container(
@@ -652,6 +641,59 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomSheet(EnrolledScheme scheme) {
+    // --- Helper to strictly parse DD-MM-YYYY from your API ---
+    DateTime? parseDate(String dateStr) {
+      try {
+        final parts = dateStr.split('-');
+        if (parts.length == 3) {
+          return DateTime(
+            int.parse(parts[2]), // Year
+            int.parse(parts[1]), // Month
+            int.parse(parts[0]), // Day
+          );
+        }
+      } catch (e) {
+        debugPrint("Date parsing error: $e");
+      }
+      return null;
+    }
+
+    // --- Date Logic Evaluation ---
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    
+    DateTime? lastPayment = parseDate(scheme.lastPaymentDate);
+    DateTime? nextDue = parseDate(scheme.nextDueDate);
+
+    bool isPaidThisMonth = false;
+    bool isMissed = false;
+
+    // 1. Check if the user already paid in the current calendar month
+    if (lastPayment != null) {
+      isPaidThisMonth = (lastPayment.year == today.year && lastPayment.month == today.month);
+    }
+
+    // 2. If not paid this month, check if today is PAST the next due date
+    if (!isPaidThisMonth && nextDue != null) {
+      if (today.isAfter(nextDue)) {
+        isMissed = true;
+      }
+    }
+
+    // 3. Determine Final Button State
+    bool isCompleted = scheme.monthsPaid >= scheme.totalMonths;
+    bool isButtonDisabled = isCompleted || isPaidThisMonth || isMissed;
+
+    String buttonText = "Pay Now — ₹${scheme.monthlyAmount}/month";
+    if (isCompleted) {
+      buttonText = "Completed";
+    } else if (isPaidThisMonth) {
+      buttonText = "Paid for this month";
+    } else if (isMissed) {
+      buttonText = "Date crossed. Visit Suvarna Jewellers store in order to pay for this month.";
+    }
+    // -----------------------------
+
     return Padding(
       padding: const EdgeInsets.all(22),
       child: Column(
@@ -689,38 +731,40 @@ class _HomeScreenState extends State<HomeScreen> {
               "${scheme.accumulatedGrams.toStringAsFixed(3)} g",
             ),
           const SizedBox(height: 24),
+          
           ElevatedButton(
-            onPressed: scheme.monthsPaid >= scheme.totalMonths
+            onPressed: isButtonDisabled
                 ? null
                 : () {
-              Navigator.pop(context);
-              PaymentService.startPayment(
-                context: context,
-                schemeId: scheme.schemeId,
-                amount: scheme.monthlyAmount,
-                onSuccess: () {
-                  EnrolledSchemeService.invalidateCache();
-                  refreshSchemes();
-                },
-              );
-            },
+                    Navigator.pop(context);
+                    PaymentService.startPayment(
+                      context: context,
+                      schemeId: scheme.schemeId,
+                      amount: scheme.monthlyAmount,
+                      onSuccess: () {
+                        EnrolledSchemeService.invalidateCache();
+                        refreshSchemes(); 
+                      },
+                    );
+                  },
             style: ElevatedButton.styleFrom(
-              backgroundColor: scheme.monthsPaid >= scheme.totalMonths
+              backgroundColor: isButtonDisabled
                   ? Colors.grey.shade400
                   : const Color(0xFFD4AF37),
-              disabledBackgroundColor: Colors.grey.shade400,
+              disabledBackgroundColor: Colors.grey.shade300,
+              disabledForegroundColor: Colors.grey.shade600,
               minimumSize: const Size(double.infinity, 52),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
             ),
             child: Text(
-              scheme.monthsPaid >= scheme.totalMonths
-                  ? "Completed"
-                  : "Pay Now — ₹${scheme.monthlyAmount}/month",
+              buttonText,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                fontSize: 14,
               ),
             ),
           ),
@@ -729,7 +773,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
   Widget _detailItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -759,13 +802,15 @@ class _HomeScreenState extends State<HomeScreen> {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
         BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag), label: "Products"),
+          icon: Icon(Icons.shopping_bag),
+          label: "Products",
+        ),
         BottomNavigationBarItem(
-            icon: Icon(Icons.description), label: "Schemes"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.trending_up), label: "Rates"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.person), label: "Profile"),
+          icon: Icon(Icons.description),
+          label: "Schemes",
+        ),
+        BottomNavigationBarItem(icon: Icon(Icons.trending_up), label: "Rates"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
       ],
     );
   }

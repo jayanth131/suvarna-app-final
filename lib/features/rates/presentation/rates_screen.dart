@@ -21,9 +21,7 @@ class RatesScreen extends StatelessWidget {
         Positioned.fill(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: Container(
-              color: const Color(0xFFF5EBDD).withOpacity(0.55),
-            ),
+            child: Container(color: const Color(0xFFF5EBDD).withOpacity(0.55)),
           ),
         ),
         SafeArea(
@@ -36,22 +34,36 @@ class RatesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Live Rates",
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF3B2A1F),
+                    Semantics(
+                      header: true,
+                      headingLevel: 1,
+                      label: "Live Rates",
+                      excludeSemantics: true,
+                      child: Text(
+                        "Live Rates",
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF3B2A1F),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      "Updated today · Market rates",
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: const Color(0xFF9E8E7E),
+                    Semantics(
+                      header: true,
+                      headingLevel: 2,
+                      label: "Updated today · Market rates",
+                      excludeSemantics: true,
+                      child: Text(
+                        "Updated today · Market rates",
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: const Color(0xFF9E8E7E),
+                        ),
                       ),
                     ),
+                    
+                    
                   ],
                 ),
               ),

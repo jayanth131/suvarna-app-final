@@ -4,10 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class TermsAndConditionsDialog extends StatefulWidget {
   final VoidCallback onAccept;
 
-  const TermsAndConditionsDialog({
-    super.key,
-    required this.onAccept,
-  });
+  const TermsAndConditionsDialog({super.key, required this.onAccept});
 
   @override
   State<TermsAndConditionsDialog> createState() =>
@@ -20,9 +17,7 @@ class _TermsAndConditionsDialogState extends State<TermsAndConditionsDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF6F0E4),
@@ -32,10 +27,7 @@ class _TermsAndConditionsDialogState extends State<TermsAndConditionsDialog> {
           children: [
             // ── Header ──────────────────────────────────
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: const BoxDecoration(
                 color: Color(0xFFD4AF37),
                 borderRadius: BorderRadius.only(
@@ -54,12 +46,17 @@ class _TermsAndConditionsDialogState extends State<TermsAndConditionsDialog> {
                       color: Colors.white,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 24,
+                  Semantics(
+                    label: 'Close',
+                    button:
+                        true, // Tells the screen reader this is a clickable button
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ],
@@ -86,36 +83,39 @@ class _TermsAndConditionsDialogState extends State<TermsAndConditionsDialog> {
             // ── Checkbox ────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _isChecked,
-                      onChanged: (value) {
-                        setState(() {
-                          _isChecked = value ?? false;
-                        });
-                      },
-                      activeColor: const Color(0xFFD4AF37),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
+              child: MergeSemantics(
+                // <-- Merges the child semantics into one node
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: _isChecked,
+                        onChanged: (value) {
+                          setState(() {
+                            _isChecked = value ?? false;
+                          });
+                        },
+                        activeColor: const Color(0xFFD4AF37),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "I agree to the Terms & Conditions",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: const Color(0xFF3B2A1F),
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "I agree to the Terms & Conditions",
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: const Color(0xFF3B2A1F),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 

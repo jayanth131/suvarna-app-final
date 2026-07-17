@@ -66,6 +66,15 @@ class SessionManager {
     // Persists across logout so we know last logged-in phone
     await prefs.setString(_keyLastPhone, username);
   }
+// =========================
+  // FULL WIPE (ACCOUNT DELETION)
+  // =========================
+
+  // Completely clears all data saved in SharedPreferences.
+  static Future<void> clearAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); 
+  }
 
   // clearSession clears ONLY active login state
   // token + userId + lastPhone + lastName are intentionally kept

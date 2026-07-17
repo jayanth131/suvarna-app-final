@@ -12,17 +12,22 @@ class NotificationsScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
+          // Exclude background from semantics so TalkBack ignores it
           Positioned.fill(
-            child: Image.asset(
-              "assets/images/showroom_bg.png",
-              fit: BoxFit.cover,
+            child: ExcludeSemantics(
+              child: Image.asset(
+                "assets/images/showroom_bg.png",
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: Container(
-                color: const Color(0xFFF5EBDD).withOpacity(0.55),
+            child: ExcludeSemantics(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  color: const Color(0xFFF5EBDD).withOpacity(0.55),
+                ),
               ),
             ),
           ),
@@ -35,21 +40,31 @@ class NotificationsScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
-                          size: 18,
-                          color: Color(0xFF7A7267),
+                      // Semantic label and button trait added here
+                      Semantics(
+                        label: "Back",
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new,
+                            size: 18,
+                            color: Color(0xFF7A7267),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        "Notifications",
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF3B2A1F),
+                      // Semantic header trait added here
+                      Semantics(
+                        header: true,
+                        headingLevel:1,
+                        child: Text(
+                          "Notifications",
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF3B2A1F),
+                          ),
                         ),
                       ),
                     ],
@@ -79,8 +94,7 @@ class NotificationsScreen extends StatelessWidget {
                       }
 
                       return ListView.builder(
-                        padding:
-                        const EdgeInsets.fromLTRB(16, 0, 16, 120),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
                         itemCount: notifications.length,
                         itemBuilder: (context, index) =>
                             _buildNotificationCard(notifications[index]),

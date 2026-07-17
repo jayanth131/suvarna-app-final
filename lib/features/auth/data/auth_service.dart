@@ -174,7 +174,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse("$baseUrl/send-otp"),
+        Uri.parse("https://suvarnagold-16e5.vercel.app/api/otp/resetpass"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "phone": mobile,
@@ -203,7 +203,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse("$baseUrl/verify-otp"),
+        Uri.parse("https://suvarnagold-16e5.vercel.app/api/otp/resetpass/verify"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "phone": mobile,
@@ -356,7 +356,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse("$baseUrl/send-otp"),
+        Uri.parse("https://suvarnagold-16e5.vercel.app/api/otp/resetmpin"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "phone": mobile,
@@ -385,7 +385,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse("$baseUrl/verify-otp"),
+        Uri.parse("https://suvarnagold-16e5.vercel.app/api/otp/resetmpin/verify"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "phone": mobile,

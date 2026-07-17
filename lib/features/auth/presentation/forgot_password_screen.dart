@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart'; // Required for KeyDownEvent & LogicalKeyboardKey
 import 'package:google_fonts/google_fonts.dart';
 import '../data/auth_service.dart';
 import 'login_screen.dart';
@@ -16,52 +18,106 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   String _step = 'phone';
 
   final _phoneController = TextEditingController();
-  final List<TextEditingController> _otpControllers =
-  List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _otpFocusNodes =
-  List.generate(6, (_) => FocusNode());
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _error;
+  bool _isAdvancing = false;
 
   String get _otp => _otpControllers.map((c) => c.text).join();
 
   static const String baseUrl =
       "https://suvarna-jewellers-customer-backend.vercel.app/api/auth";
 
+  @override
+  void initState() {
+    super.initState();
+    for (final node in _otpFocusNodes) {
+      node.addListener(_onFocusChange);
+    }
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  void _announceError(String message) {
+    setState(() => _error = message);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      SemanticsService.announce(message, TextDirection.ltr);
+    });
+  }
+
+  void _announceOtpErrorAndResetFocus(String message) {
+    setState(() {
+      _error = message;
+      for (final c in _otpControllers) {
+        c.clear();
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      SemanticsService.announce(message, TextDirection.ltr);
+      FocusScope.of(context).requestFocus(_otpFocusNodes[0]);
+    });
+  }
+
   // Step 1: Send OTP
   void _sendOtp() async {
     final phone = _phoneController.text.trim();
 
     if (phone.length != 10) {
-      setState(() => _error = "Enter valid 10-digit number");
+      _announceError("Enter valid 10-digit number");
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     final result = await AuthService.sendForgotPasswordOtp(mobile: phone);
 
     setState(() => _isLoading = false);
 
     if (!result.success) {
-      setState(() => _error = result.message ?? "Failed to send OTP");
+      _announceError(result.message ?? "Failed to send OTP");
       return;
     }
 
     setState(() => _step = 'otp');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      SemanticsService.announce(
+        "OTP sent.",
+        TextDirection.ltr,
+      );
+      FocusScope.of(context).requestFocus(_otpFocusNodes[0]);
+    });
   }
 
   // Step 2: Verify OTP
   void _verifyOtp() async {
     if (_otp.length != 6) {
-      setState(() => _error = "Enter complete 6-digit OTP");
+      _announceOtpErrorAndResetFocus(
+        "Enter complete 6-digit OTP. You are missing "
+        "${6 - _otp.length} ${6 - _otp.length == 1 ? 'digit' : 'digits'}.",
+      );
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     final result = await AuthService.verifyForgotPasswordOtp(
       mobile: _phoneController.text.trim(),
@@ -71,7 +127,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = false);
 
     if (!result.success) {
-      setState(() => _error = result.message ?? "Invalid OTP");
+      _announceOtpErrorAndResetFocus(result.message ?? "Invalid OTP");
       return;
     }
 
@@ -83,11 +139,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final password = _passwordController.text.trim();
 
     if (password.length < 6) {
-      setState(() => _error = "Password must be at least 6 characters");
+      _announceError("Password must be at least 6 characters");
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     final result = await AuthService.resetPassword(
       mobile: _phoneController.text.trim(),
@@ -98,7 +157,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = false);
 
     if (!result.success) {
-      setState(() => _error = result.message ?? "Reset failed");
+      _announceError(result.message ?? "Reset failed");
       return;
     }
 
@@ -106,29 +165,96 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     await Future.delayed(const Duration(seconds: 2));
 
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
+      (route) => false,
     );
   }
 
+  // Integrated from OtpVerificationScreen
   void _onOtpChanged(int index, String value) {
-    if (value.isNotEmpty && index < 5) {
-      _otpFocusNodes[index + 1].requestFocus();
-    } else if (value.isEmpty && index > 0) {
-      _otpFocusNodes[index - 1].requestFocus();
-    }
     setState(() {});
+
+    if (value.isNotEmpty && index < 5 && !_isAdvancing) {
+      _isAdvancing = true;
+      final nextIndex = index + 1;
+      _otpFocusNodes[nextIndex].requestFocus();
+      _isAdvancing = false;
+    }
   }
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
-    for (final c in _otpControllers) c.dispose();
-    for (final f in _otpFocusNodes) f.dispose();
+    for (final node in _otpFocusNodes) {
+      node.removeListener(_onFocusChange);
+    }
+    for (final c in _otpControllers) {
+      c.dispose();
+    }
+    for (final f in _otpFocusNodes) {
+      f.dispose();
+    }
     super.dispose();
+  }
+
+  String get _titleText =>
+      _step == 'done' ? "Password Reset!" : "Reset Password";
+
+  // Integrated robust OTP Box Builder
+  Widget _buildOtpBox(int index) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _otpControllers[index],
+      builder: (context, value, child) {
+        final digit = value.text;
+        final label = digit.isEmpty
+            ? "Input field ${index + 1}"
+            : "Input field ${index + 1}, $digit";
+
+        return Semantics(
+          label: label,
+          textField: true,
+          focused: _otpFocusNodes[index].hasFocus,
+          excludeSemantics: true,
+          sortKey: OrdinalSortKey(index.toDouble()),
+          child: SizedBox(
+            width: 44,
+            height: 54,
+            child: Focus(
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent &&
+                    event.logicalKey == LogicalKeyboardKey.backspace) {
+                  if (_otpControllers[index].text.isEmpty && index > 0) {
+                    _otpFocusNodes[index - 1].requestFocus();
+                    return KeyEventResult.handled;
+                  }
+                }
+                return KeyEventResult.ignored;
+              },
+              child: TextField(
+                controller: _otpControllers[index],
+                focusNode: _otpFocusNodes[index],
+                keyboardType: TextInputType.number,
+                maxLength: 1,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  counterText: '',
+                  filled: true,
+                  fillColor: const Color(0xFFF5EBDD),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+                onChanged: (val) => _onOtpChanged(index, val),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -156,7 +282,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 22, vertical: 24),
+                    horizontal: 22,
+                    vertical: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF6F0E4),
                     borderRadius: BorderRadius.circular(26),
@@ -167,14 +295,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       // Back button
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
-                          size: 16,
-                          color: Color(0xFF7A7267),
+                      Semantics(
+                        label: 'Back',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new,
+                            size: 16,
+                            color: Color(0xFF7A7267),
+                          ),
                         ),
                       ),
 
@@ -183,14 +314,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       Center(
                         child: Column(
                           children: [
-                            Text(
-                              _step == 'done'
-                                  ? "Password Reset!"
-                                  : "Reset Password",
-                              style: GoogleFonts.playfairDisplay(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF3B2A1F),
+                            Semantics(
+                              header: true,
+                              headingLevel: 1,
+                              label: "$_titleText",
+                              excludeSemantics: true,
+                              child: Text(
+                                _titleText,
+                                style: GoogleFonts.playfairDisplay(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF3B2A1F),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -228,31 +363,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           child: Row(
                             children: [
                               const SizedBox(width: 14),
-                              Text("+91",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF6E665A),
-                                  )),
+                              Text(
+                                "+91",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: const Color(0xFF6E665A),
+                                ),
+                              ),
                               Container(
-                                height: 28, width: 1,
-                                margin: const EdgeInsets.symmetric(horizontal: 12),
+                                height: 28,
+                                width: 1,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 color: const Color(0xFFD4AF37).withOpacity(0.5),
                               ),
                               Expanded(
-                                child: TextField(
-                                  controller: _phoneController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: "10-digit number",
-                                    hintStyle: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB8B0A4),
+                                child: Semantics(
+                                  label: "Mobile number",
+                                  textField: true,
+                                  child: TextField(
+                                    controller: _phoneController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "10-digit number",
+                                      hintStyle: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: const Color(0xFFB8B0A4),
+                                      ),
                                     ),
-                                  ),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF6E665A),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: const Color(0xFF6E665A),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -266,26 +410,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       if (_step == 'otp') ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(6, (index) => SizedBox(
-                            width: 44,
-                            height: 54,
-                            child: TextField(
-                              controller: _otpControllers[index],
-                              focusNode: _otpFocusNodes[index],
-                              keyboardType: TextInputType.number,
-                              maxLength: 1,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                counterText: '',
-                                filled: true,
-                                fillColor: const Color(0xFFF5EBDD),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              onChanged: (v) => _onOtpChanged(index, v),
-                            ),
-                          )),
+                          children: List.generate(6, _buildOtpBox), // Now using the advanced builder
                         ),
                       ],
 
@@ -304,31 +429,44 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: TextField(
-                                  controller: _passwordController,
-                                  obscureText: _obscurePassword,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: "New password (min 6 chars)",
-                                    hintStyle: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB8B0A4),
+                                child: Semantics(
+                                  label: "New password",
+                                  textField: true,
+                                  obscured: _obscurePassword,
+                                  child: TextField(
+                                    controller: _passwordController,
+                                    obscureText: _obscurePassword,
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "New password (min 6 chars)",
+                                      hintStyle: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: const Color(0xFFB8B0A4),
+                                      ),
                                     ),
-                                  ),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF6E665A),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: const Color(0xFF6E665A),
+                                    ),
                                   ),
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () => setState(() =>
-                                _obscurePassword = !_obscurePassword),
-                                child: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: const Color(0xFF6E665A),
+                              Semantics(
+                                label: _obscurePassword
+                                    ? 'Show password'
+                                    : 'Hide password',
+                                button: true,
+                                child: GestureDetector(
+                                  onTap: () => setState(
+                                    () => _obscurePassword =
+                                        !_obscurePassword,
+                                  ),
+                                  child: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: const Color(0xFF6E665A),
+                                  ),
                                 ),
                               ),
                             ],
@@ -350,11 +488,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       // Error
                       if (_error != null) ...[
                         const SizedBox(height: 10),
-                        Text(
-                          _error!,
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 13,
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -366,34 +507,43 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : () {
-                              if (_step == 'phone') _sendOtp();
-                              else if (_step == 'otp') _verifyOtp();
-                              else if (_step == 'password') _resetPassword();
-                            },
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    if (_step == 'phone') {
+                                      _sendOtp();
+                                    } else if (_step == 'otp') {
+                                      _verifyOtp();
+                                    } else if (_step == 'password') {
+                                      _resetPassword();
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFD4AF37),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(24),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 15,
+                              ),
                             ),
                             child: _isLoading
                                 ? const SizedBox(
-                              height: 18, width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
                                 : Text(
-                              _step == 'phone'
-                                  ? "Send OTP"
-                                  : _step == 'otp'
-                                  ? "Verify OTP"
-                                  : "Reset Password",
-                              style: const TextStyle(fontSize: 15),
-                            ),
+                                    _step == 'phone'
+                                        ? "Send OTP"
+                                        : _step == 'otp'
+                                        ? "Verify OTP"
+                                        : "Reset Password",
+                                    style: const TextStyle(fontSize: 15),
+                                  ),
                           ),
                         ),
                     ],
