@@ -35,7 +35,7 @@ android {
         applicationId = "com.suvarna.jewellers.suvarna_jewellers"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion   
-        versionCode = 6
+        versionCode = 8
         versionName = flutter.versionName
     }
 
